@@ -27,6 +27,14 @@ Ako imas lokalno instaliran PostgreSQL:
 createdb -U postgres stop_db
 ```
 
+**Ili koristi hostovanu bazu (Neon)** - nema potrebe da instaliras PostgreSQL lokalno:
+
+1. Napravi nalog na [neon.tech](https://neon.tech) i projekat
+2. Iz projekta kopiraj connection string (izgleda kao `postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require`)
+3. Nalepi ga kao `DATABASE_URL` u koraku 3 ispod
+
+Ceo tim moze da koristi istu Neon bazu tokom razvoja - nema potrebe da svako drzi lokalni PostgreSQL.
+
 ### 3. Podesi environment promenljive
 
 Kopiraj `.env.example` u `.env` i upiši svoje vrednosti:
