@@ -5,6 +5,8 @@ Baza podataka i backend za "Stop" - aplikaciju za brzu hranu.
 - [`database/schema.dbml`](database/schema.dbml) - DBML sema baze (paste u [dbdiagram.io](https://dbdiagram.io))
 - [`backend/`](backend/) - Node.js / Express / TypeScript / Prisma / Socket.IO API
 
+Live backend (Railway): https://stop-backend-production.up.railway.app
+
 ## Pokretanje backend-a
 
 ### Preduslovi
