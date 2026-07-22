@@ -160,6 +160,19 @@ ordersRouter.post(
 
 const CANCELLABLE_STATUSES: OrderStatus[] = [OrderStatus.pending, OrderStatus.confirmed];
 
+// Dozvoljeni sledeci koraci iz svakog statusa - sprecava zaposlenog da vrati porudzbinu
+// unazad ili menja vec zavrsenu/otkazanu porudzbinu
+const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending: [OrderStatus.confirmed, OrderStatus.cancelled],
+  confirmed: [OrderStatus.preparing, OrderStatus.cancelled],
+  preparing: [OrderStatus.ready, OrderStatus.cancelled],
+  ready: [OrderStatus.out_for_delivery, OrderStatus.completed, OrderStatus.cancelled],
+  out_for_delivery: [OrderStatus.delivered, OrderStatus.cancelled],
+  delivered: [OrderStatus.completed],
+  completed: [],
+  cancelled: [],
+};
+
 ordersRouter.patch(
   '/:id/cancel',
   requireAuth('customer'),
@@ -207,9 +220,17 @@ ordersRouter.patch(
   asyncHandler(async (req, res) => {
     const { status, employeeId } = statusUpdateSchema.parse(req.body);
 
+    const existing = await prisma.order.findUnique({ where: { id: req.params.id } });
+    if (!existing) throw new AppError(404, 'Porudzbina nije pronadjena');
+
+    const allowedNextStatuses = ORDER_STATUS_TRANSITIONS[existing.status];
+    if (!allowedNextStatuses.includes(status)) {
+      throw new AppError(409, `Nije moguc prelaz iz statusa "${existing.status}" u "${status}"`);
+    }
+
     const { order, notification } = await prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
-        where: { id: req.params.id },
+        where: { id: existing.id },
         data: { status },
       });
 
