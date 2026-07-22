@@ -138,6 +138,19 @@ Table order_history {
   }
 }
 
+Table notifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  customer_id uuid [not null]
+  order_id uuid [not null]
+  message varchar [not null]
+  is_read boolean [not null, default: false]
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    customer_id
+  }
+}
+
 Ref: products.category_id > categories.id
 Ref: product_modifiers.product_id > products.id
 
@@ -153,3 +166,6 @@ Ref: order_item_modifiers.order_item_id > order_items.id
 
 Ref: order_history.order_id > orders.id
 Ref: order_history.employee_id > employees.id
+
+Ref: notifications.customer_id > customers.id
+Ref: notifications.order_id > orders.id

@@ -100,7 +100,21 @@ Sve rute su pod `/api` prefiksom:
 - `GET/POST/PUT/DELETE /api/addresses` (zahteva ulogovanog kupca)
 - `GET/POST /api/orders`, `PATCH /api/orders/:id/status` (zahteva ulogovanog zaposlenog)
 - `GET/POST /api/employees` (zahteva ulogovanog zaposlenog)
+- `GET /api/notifications`, `PATCH /api/notifications/:id/read` (zahteva ulogovanog kupca)
 
 Rute koje menjaju podatke (`POST`/`PUT`/`DELETE`, osim registracije/login-a) zahtevaju `Authorization: Bearer <token>` header sa JWT-om dobijenim kroz login.
 
-Socket.IO dogadjaji (`order:new`, `order:status`) se emituju uzivo ka dashboard sobi i ka sobi konkretne porudzbine kad se kreira ili promeni status porudzbine.
+## Notifikacije
+
+Kad se porudzbina kreira ili joj se promeni status, backend automatski:
+1. Upisuje red u `notifications` tabelu (kupac ih moze naknadno procitati preko `GET /api/notifications`)
+2. Emituje `notification:new` Socket.IO event uzivo ka kupcu
+
+Klijent (mobilna app) treba da se posle konekcije prijavi na svoju sobu:
+
+```js
+socket.emit('customer:join', customerId);
+socket.on('notification:new', (notification) => { /* prikazi kupcu */ });
+```
+
+Ostali Socket.IO dogadjaji: `order:new` i `order:status` (dashboard soba + soba konkretne porudzbine preko `order:track`), za real-time pracenje statusa.

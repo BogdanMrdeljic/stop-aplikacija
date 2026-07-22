@@ -19,6 +19,11 @@ export function initSocket(httpServer: HttpServer): Server {
     socket.on('order:track', (orderId: string) => {
       socket.join(`order:${orderId}`);
     });
+
+    // Kupac prati svoje notifikacije
+    socket.on('customer:join', (customerId: string) => {
+      socket.join(`customer:${customerId}`);
+    });
   });
 
   return io;
@@ -38,4 +43,9 @@ export function emitOrderStatusChanged(order: { id: string; status: string }) {
 export function emitNewOrder(order: unknown) {
   if (!io) return;
   io.to('dashboard').emit('order:new', order);
+}
+
+export function emitNotification(customerId: string, notification: unknown) {
+  if (!io) return;
+  io.to(`customer:${customerId}`).emit('notification:new', notification);
 }

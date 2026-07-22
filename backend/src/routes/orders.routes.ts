@@ -4,8 +4,9 @@ import { z } from 'zod';
 import { prisma } from '../config/prisma';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
-import { emitNewOrder, emitOrderStatusChanged } from '../sockets';
+import { emitNewOrder, emitNotification, emitOrderStatusChanged } from '../sockets';
 import { requireAuth } from '../middleware/auth';
+import { orderStatusMessages } from '../utils/orderStatusMessages';
 
 export const ordersRouter = Router();
 
@@ -138,14 +139,22 @@ ordersRouter.post(
         data: { orderId: created.id, status: OrderStatus.pending },
       });
 
-      return tx.order.findUniqueOrThrow({
-        where: { id: created.id },
-        include: { items: { include: { modifiers: true } }, address: true },
+      const notification = await tx.notification.create({
+        data: { customerId, orderId: created.id, message: orderStatusMessages[OrderStatus.pending] },
       });
+
+      return {
+        order: await tx.order.findUniqueOrThrow({
+          where: { id: created.id },
+          include: { items: { include: { modifiers: true } }, address: true },
+        }),
+        notification,
+      };
     });
 
-    emitNewOrder(order);
-    res.status(201).json(order);
+    emitNewOrder(order.order);
+    emitNotification(customerId, order.notification);
+    res.status(201).json(order.order);
   }),
 );
 
@@ -160,7 +169,7 @@ ordersRouter.patch(
   asyncHandler(async (req, res) => {
     const { status, employeeId } = statusUpdateSchema.parse(req.body);
 
-    const order = await prisma.$transaction(async (tx) => {
+    const { order, notification } = await prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
         where: { id: req.params.id },
         data: { status },
@@ -170,10 +179,15 @@ ordersRouter.patch(
         data: { orderId: updated.id, status, employeeId },
       });
 
-      return updated;
+      const createdNotification = await tx.notification.create({
+        data: { customerId: updated.customerId, orderId: updated.id, message: orderStatusMessages[status] },
+      });
+
+      return { order: updated, notification: createdNotification };
     });
 
     emitOrderStatusChanged(order);
+    emitNotification(order.customerId, notification);
     res.json(order);
   }),
 );
