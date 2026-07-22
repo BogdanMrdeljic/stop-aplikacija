@@ -1,0 +1,155 @@
+// Stop - fast food ordering app
+// Database schema for dbdiagram.io
+// Paste this file's content directly into https://dbdiagram.io
+
+Project stop_app {
+  database_type: 'PostgreSQL'
+  note: 'Baza za Stop aplikaciju za automatizaciju porudzbina'
+}
+
+Enum order_type {
+  delivery
+  pickup
+}
+
+Enum order_status {
+  pending
+  confirmed
+  preparing
+  ready
+  out_for_delivery
+  delivered
+  completed
+  cancelled
+}
+
+Table categories {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table products {
+  id uuid [pk, default: `gen_random_uuid()`]
+  category_id uuid [not null]
+  name varchar [not null]
+  description text
+  price decimal(10,2) [not null]
+  image_url varchar
+  is_available boolean [not null, default: true]
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    category_id
+  }
+}
+
+Table product_modifiers {
+  id uuid [pk, default: `gen_random_uuid()`]
+  product_id uuid [not null]
+  name varchar [not null, note: 'npr. "Extra sir", "Velika porcija"']
+  price decimal(10,2) [not null, default: 0]
+
+  indexes {
+    product_id
+  }
+}
+
+Table customers {
+  id uuid [pk, default: `gen_random_uuid()`]
+  first_name varchar [not null]
+  last_name varchar [not null]
+  email varchar [not null, unique]
+  phone varchar
+  password_hash varchar [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table addresses {
+  id uuid [pk, default: `gen_random_uuid()`]
+  customer_id uuid [not null]
+  street varchar [not null]
+  city varchar [not null]
+  note varchar [note: 'sprat, interfon, napomena za kurira']
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    customer_id
+  }
+}
+
+Table orders {
+  id uuid [pk, default: `gen_random_uuid()`]
+  customer_id uuid [not null]
+  address_id uuid [note: 'nullable za pickup porudzbine']
+  order_type order_type [not null]
+  status order_status [not null, default: 'pending']
+  total decimal(10,2) [not null]
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    customer_id
+    status
+  }
+}
+
+Table order_items {
+  id uuid [pk, default: `gen_random_uuid()`]
+  order_id uuid [not null]
+  product_id uuid [not null]
+  quantity integer [not null, default: 1]
+  price decimal(10,2) [not null]
+
+  indexes {
+    order_id
+    product_id
+  }
+}
+
+Table order_item_modifiers {
+  id uuid [pk, default: `gen_random_uuid()`]
+  order_item_id uuid [not null]
+  name varchar [not null]
+  price decimal(10,2) [not null]
+
+  indexes {
+    order_item_id
+  }
+}
+
+Table employees {
+  id uuid [pk, default: `gen_random_uuid()`]
+  first_name varchar [not null]
+  last_name varchar [not null]
+  email varchar [not null, unique]
+  password_hash varchar [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table order_history {
+  id uuid [pk, default: `gen_random_uuid()`]
+  order_id uuid [not null]
+  employee_id uuid [note: 'nullable - changed_by, null ako je promena automatska']
+  status order_status [not null]
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    order_id
+  }
+}
+
+Ref: products.category_id > categories.id
+Ref: product_modifiers.product_id > products.id
+
+Ref: addresses.customer_id > customers.id
+
+Ref: orders.customer_id > customers.id
+Ref: orders.address_id > addresses.id
+
+Ref: order_items.order_id > orders.id
+Ref: order_items.product_id > products.id
+
+Ref: order_item_modifiers.order_item_id > order_items.id
+
+Ref: order_history.order_id > orders.id
+Ref: order_history.employee_id > employees.id
