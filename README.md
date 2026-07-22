@@ -99,6 +99,7 @@ Sve rute su pod `/api` prefiksom:
 - `GET/POST/PUT/DELETE /api/products`, `POST/PUT/DELETE /api/products/:productId/modifiers`
 - `GET/POST/PUT/DELETE /api/addresses` (zahteva ulogovanog kupca)
 - `GET/POST /api/orders`, `PATCH /api/orders/:id/status` (zahteva ulogovanog zaposlenog)
+- `PATCH /api/orders/:id/cancel` (zahteva ulogovanog kupca, samo dok je status `pending` ili `confirmed`)
 - `GET/POST /api/employees` (zahteva ulogovanog zaposlenog)
 - `GET /api/notifications`, `PATCH /api/notifications/:id/read` (zahteva ulogovanog kupca)
 

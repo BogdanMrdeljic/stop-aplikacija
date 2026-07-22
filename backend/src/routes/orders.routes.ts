@@ -158,6 +158,44 @@ ordersRouter.post(
   }),
 );
 
+const CANCELLABLE_STATUSES: OrderStatus[] = [OrderStatus.pending, OrderStatus.confirmed];
+
+ordersRouter.patch(
+  '/:id/cancel',
+  requireAuth('customer'),
+  asyncHandler(async (req, res) => {
+    const existing = await prisma.order.findUnique({ where: { id: req.params.id } });
+    if (!existing || existing.customerId !== req.auth!.sub) {
+      throw new AppError(404, 'Porudzbina nije pronadjena');
+    }
+
+    if (!CANCELLABLE_STATUSES.includes(existing.status)) {
+      throw new AppError(409, `Porudzbina se vise ne moze otkazati - trenutni status je "${existing.status}"`);
+    }
+
+    const { order, notification } = await prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id: existing.id },
+        data: { status: OrderStatus.cancelled },
+      });
+
+      await tx.orderHistory.create({
+        data: { orderId: updated.id, status: OrderStatus.cancelled },
+      });
+
+      const createdNotification = await tx.notification.create({
+        data: { customerId: updated.customerId, orderId: updated.id, message: orderStatusMessages[OrderStatus.cancelled] },
+      });
+
+      return { order: updated, notification: createdNotification };
+    });
+
+    emitOrderStatusChanged(order);
+    emitNotification(order.customerId, notification);
+    res.json(order);
+  }),
+);
+
 const statusUpdateSchema = z.object({
   status: z.nativeEnum(OrderStatus),
   employeeId: z.string().uuid().optional(),
