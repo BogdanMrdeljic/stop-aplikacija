@@ -6,6 +6,8 @@ Baza podataka i backend za "Stop" - aplikaciju za brzu hranu.
 
 Live backend (Railway): https://stop-backend-production.up.railway.app
 
+API dokumentacija (Swagger UI): https://stop-backend-production.up.railway.app/api/docs
+
 ## Pokretanje backend-a
 
 ### Preduslovi
@@ -88,6 +90,8 @@ curl http://localhost:4000/api/health
 | `npx prisma migrate dev` | Kreira novu migraciju posle izmene `schema.prisma` |
 
 ## Struktura API-ja
+
+Puna interaktivna dokumentacija (Swagger UI) je dostupna na `/api/docs` kad server radi (npr. `http://localhost:4000/api/docs` lokalno). Raw OpenAPI spec je na `/api/docs.json`.
 
 Sve rute su pod `/api` prefiksom:
 
